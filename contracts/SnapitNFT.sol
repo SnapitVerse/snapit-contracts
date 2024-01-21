@@ -4,7 +4,7 @@ import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
 
 contract SnapitNFT is ERC1155 {
     // Mapping to keep track of minted token IDs
-    mapping(uint256 => bool) private _mintedTokens;
+    mapping(uint256 => bytes) public mintedTokens;
 
     constructor() ERC1155('https://myapi.com/api/token/{id}.json') {}
 
@@ -13,8 +13,8 @@ contract SnapitNFT is ERC1155 {
         uint256 id,
         bytes memory data
     ) public {
-        require(!_mintedTokens[id], 'Token already minted');
-        _mintedTokens[id] = true;
+        require((mintedTokens[id].length == 0), 'Token already minted');
+        mintedTokens[id] = data;
         _mint(account, id, 1, data);
     }
 
@@ -28,4 +28,6 @@ contract SnapitNFT is ERC1155 {
         require(amount == 1, 'Can only transfer 1 token at a time');
         super.safeTransferFrom(from, to, id, amount, data);
     }
+
+    // getTokenMetadata
 }
