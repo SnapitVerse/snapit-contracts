@@ -7,7 +7,6 @@ async function main() {
   const ERC1155 = await ethers.getContractFactory('SnapitNFT')
   const erc1155 = await ERC1155.deploy()
   await erc1155.waitForDeployment()
-  console.log('pipisim')
 }
 
 // We recommend this pattern to be able to use async/await everywhere

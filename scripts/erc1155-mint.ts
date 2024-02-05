@@ -40,7 +40,6 @@ async function main() {
   await response.wait()
 
   console.log('mint response: ', response)
-  console.log('pipisim')
 
   const balance = await erc1155.balanceOf(owner.address, tokenId)
 
