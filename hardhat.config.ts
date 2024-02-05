@@ -20,6 +20,18 @@ const config: HardhatUserConfig = {
     local: {
       url: 'http://localhost:8545',
     },
+    binanceTestFork: {
+      url: 'http://localhost:8545',
+      forking: {
+        url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
+      },
+    },
+    bscTest: {
+      url: 'https://data-seed-prebsc-1-s3.binance.org:8545',
+      accounts: [
+        '3765ae92eec18f50c24b230a3f0c7c75868f9c898985d1dec97845df1a54fd16',
+      ],
+    },
   },
   solidity: {
     compilers: [
