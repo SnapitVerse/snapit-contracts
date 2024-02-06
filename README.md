@@ -20,7 +20,7 @@ npm install
 ### Basic Commands
 
 ```javascript
-npx hardhat build //to build contracts
+npx hardhat compile //to compile contracts
 npx hardhat test //run all unit tests written under tests/ folder
 ```
 
