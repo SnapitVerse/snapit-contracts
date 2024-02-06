@@ -11,6 +11,8 @@
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@openzeppelin/contracts": "^5.0.1",
     "@pancakeswap/pancake-swap-lib": "0.0.4",
+    "@pancakeswap/v3-core": "^1.0.2",
+    "@pancakeswap/v3-periphery": "^1.0.2",
     "@typescript-eslint/eslint-plugin": "^6.18.1",
     "@typescript-eslint/parser": "^6.18.1",
     "@uniswap/lib": "^4.0.1-alpha",
