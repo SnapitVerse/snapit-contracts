@@ -2,6 +2,21 @@
 
 This project involves contract definitions, unit tests and integration test and production deployment scripts.
 
+### Prerequisites:
+
+- Install latest Nodejs https://nodejs.org/en/download
+- Install hardhat globally:
+
+```
+npm -g i hardhat
+```
+
+- Install dependencies in the project's root directory
+
+```
+npm install
+```
+
 ### Basic Commands
 
 ```javascript
