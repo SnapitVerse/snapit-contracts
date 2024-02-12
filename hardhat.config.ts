@@ -1,5 +1,10 @@
 import { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
+import dotenv from 'dotenv'
+
+dotenv.config()
+
+const { BSC_MAIN_RPC_URL, BSC_TEST_RPC_URL } = process.env
 // import "uniswap-v2-deploy-plugin";
 
 const config: HardhatUserConfig = {
@@ -8,7 +13,7 @@ const config: HardhatUserConfig = {
     hardhat: {
       mining: {
         auto: true, // disable automatic mining
-        interval: [5000, 6000], // Random interval for automatic block mining (in milliseconds)
+        interval: [10000, 15000], // Random interval for automatic block mining (in milliseconds)
       },
     },
     sepolia: {
@@ -20,10 +25,16 @@ const config: HardhatUserConfig = {
     local: {
       url: 'http://localhost:8545',
     },
+    binanceMainFork: {
+      url: 'http://localhost:8545',
+      forking: {
+        url: BSC_MAIN_RPC_URL as string,
+      },
+    },
     binanceTestFork: {
       url: 'http://localhost:8545',
       forking: {
-        url: 'https://data-seed-prebsc-1-s3.binance.org:8545/',
+        url: BSC_TEST_RPC_URL as string,
       },
     },
     bscTest: {

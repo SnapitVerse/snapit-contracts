@@ -1,30 +1,21 @@
 import { ethers } from 'hardhat'
 import { Fee, Network, getAddress } from './constants'
-
-import { addLiquidity } from './operations/addLiquidity'
+import { swapTokens } from './operations/swapTokens'
 
 async function main() {
   const [owner] = await ethers.getSigners()
 
-  const network: Network = Network.BSC_TEST
+  const network: Network = Network.BSC_MAIN
 
   const Address = getAddress(network)
 
-  const fee = Fee._0_05
+  const usdcAmount = ethers.parseUnits('10', 18)
 
-  const snapitAmount = ethers.parseUnits('100', 18)
-  const usdcAmount = ethers.parseUnits('4', 18)
-
-  const slippage = 10
-
-  await addLiquidity(
+  await swapTokens(
     Address.usdc,
     Address.snapitToken,
-
     usdcAmount,
-    snapitAmount,
-    fee,
-    slippage,
+    Fee._0_05,
     network,
     owner
   )

@@ -44,6 +44,15 @@ Running an empty blockchain from scratch works just fine. However, some scripts 
 
 - ERC20 Create Pool ( ./scripts/erc20-create-pool.ts )
 - ERC20 Add Liquidity ( ./scripts/erc20-add-liquidity.ts )
-- Pancake Basic Swap ( ./scripts/pancake.ts )
+- Pancake Swap Snapit/USDC ( ./scripts/erc20-swap-snapit.ts )
 
 Forking is required.
+
+### Bsc Testnet Deployment Notes:
+
+Snapit/USDC Trade Link: https://pancakeswap.finance/swap?chain=bscTestnet&inputCurrency=0x8d809eC21EDDdc73ed8629A4E9B3E73169A20e36&outputCurrency=0x64544969ed7EBf5f083679233325356EbE738930
+
+#### Chain Explorer transaction samples:
+
+- Add Liquidity: https://testnet.bscscan.com/tx/0x9a980f771ecbca9ca30d1c7920230f081ecbb95a6d5f305294b332a7ab73b1a9
+- Swap: https://testnet.bscscan.com/tx/0x0d35cbf2975eb27064a4ec03383ca0075412d294cc443061d5be718a4f775449
