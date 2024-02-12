@@ -1,83 +1,55 @@
 import { ethers } from 'hardhat'
 
-import wethAbi from '../contracts/Pancake/weth.json'
-const usdcAddress = '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d'
-const wethAddress = '0x2170Ed0880ac9A755fd29B2688956BD959F933F8'
-
-import {
-  abi as SWAP_ROUTER_ABI,
-  bytecode as SWAP_ROUTER_BYTECODE,
-} from '@pancakeswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json'
-
-import {
-  abi as FACTORY_ABI,
-  bytecode as FACTORY_BYTECODE,
-} from '@pancakeswap/v3-core/artifacts/contracts/PancakeV3Factory.sol/PancakeV3Factory.json'
-
-import {
-  abi as POOL_ABI,
-  bytecode as POOL_BYTECODE,
-} from '@pancakeswap/v3-core/artifacts/contracts/PancakeV3Pool.sol/PancakeV3Pool.json'
-
-import { Bsc_Main } from '../contracts/Pancake/addresses.json'
-import { ERC20, ERC20__factory, IERC20__factory } from '../typechain-types'
-
-const { PancakeV3Factory: FACTORY_ADDRESS, SwapRouter: SWAP_ROUTER_ADDRESS } =
-  Bsc_Main
+import { Network, getABI, getAddress } from './constants'
 
 async function main() {
   const provider = ethers.provider
 
+  const network: Network = Network.BSC_MAIN
+
+  const Address = getAddress(network)
+  const ABI = getABI()
+
   const factoryContract = new ethers.Contract(
-    FACTORY_ADDRESS,
-    FACTORY_ABI,
+    Address.pancakeV3Factory,
+    ABI.pancakeV3Factory,
     provider
   )
 
   const poolAddress = await factoryContract.getPool(
-    wethAddress,
-    usdcAddress,
+    Address.wbnb,
+    Address.usdc,
     '500'
   )
   console.log('poolAddress', poolAddress)
 
   const signerAddress = '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B'
   const signer = await ethers.getImpersonatedSigner(signerAddress)
-  // const wethContract = await ethers.getContractAt('ERC20', wethAddress)
-  // const usdcContract = await ethers.getContractAt('ERC20', usdcAddress)
 
-  // const wethContract = ERC20__factory.connect(wethAddress) as ERC20
+  const wbnbContract = new ethers.Contract(Address.wbnb, ABI.wbnb, provider)
+  const usdcContract = new ethers.Contract(Address.usdc, ABI.usdc, provider)
 
-  // const usdcContract = ERC20__factory.connect(usdcAddress) as ERC20
+  const amountIn = ethers.parseUnits('0.01', 6)
 
-  const wethContract = new ethers.Contract(
-    wethAddress,
-    ERC20__factory.abi,
-    provider
+  await (wbnbContract.connect(signer) as any).approve(
+    Address.smartRouter,
+    amountIn.toString()
   )
-  const usdcContract = new ethers.Contract(
-    usdcAddress,
-    ERC20__factory.abi,
-    provider
-  )
-
-  const amountIn = ethers.parseUnits('0.01', 18)
-
-  await (wethContract.connect(signer) as any).approve(
-    SWAP_ROUTER_ADDRESS,
+  await (usdcContract.connect(signer) as any).approve(
+    Address.smartRouter,
     amountIn.toString()
   )
   console.log('approved!')
 
   const smartRouterContract = new ethers.Contract(
-    SWAP_ROUTER_ADDRESS,
-    SWAP_ROUTER_ABI,
+    Address.swapRouter,
+    ABI.swapRouter,
     provider
   )
 
   const params = {
-    tokenIn: wethAddress,
-    tokenOut: usdcAddress,
+    tokenIn: Address.usdc,
+    tokenOut: Address.wbnb,
     fee: '500',
     recipient: signerAddress,
     deadline: Math.floor(Date.now() / 1000) + 60 * 10,
@@ -88,7 +60,7 @@ async function main() {
 
   let wethBalance
   let usdcBalance
-  wethBalance = await wethContract.balanceOf(signerAddress)
+  wethBalance = await wbnbContract.balanceOf(signerAddress)
   usdcBalance = await usdcContract.balanceOf(signerAddress)
   console.log('================= BEFORE SWAP')
   console.log('wethBalance:', ethers.formatUnits(wethBalance.toString(), 18))
@@ -101,7 +73,7 @@ async function main() {
   })
   // await tx.wait()
 
-  wethBalance = await wethContract.balanceOf(signerAddress)
+  wethBalance = await wbnbContract.balanceOf(signerAddress)
   usdcBalance = await usdcContract.balanceOf(signerAddress)
   console.log('================= AFTER SWAP')
   console.log('wethBalance:', ethers.formatUnits(wethBalance.toString(), 18))

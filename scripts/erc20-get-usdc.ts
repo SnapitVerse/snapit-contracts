@@ -1,30 +1,23 @@
 import { ethers } from 'hardhat'
 import { Fee, Network, getAddress } from './constants'
-
-import { addLiquidity } from './operations/addLiquidity'
+import { swapTokensWithNative } from './operations/swapTokensWithNative'
 
 async function main() {
   const [owner] = await ethers.getSigners()
+
+  console.log('Owner Address: ', owner.address)
 
   const network: Network = Network.BSC_TEST
 
   const Address = getAddress(network)
 
-  const fee = Fee._0_05
+  const wbnbAmount = ethers.parseUnits('0.5', 18)
 
-  const snapitAmount = ethers.parseUnits('100', 18)
-  const usdcAmount = ethers.parseUnits('4', 18)
-
-  const slippage = 10
-
-  await addLiquidity(
+  await swapTokensWithNative(
+    Address.wbnb,
     Address.usdc,
-    Address.snapitToken,
-
-    usdcAmount,
-    snapitAmount,
-    fee,
-    slippage,
+    wbnbAmount,
+    Fee._0_05,
     network,
     owner
   )
