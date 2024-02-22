@@ -38,7 +38,7 @@ const config: HardhatUserConfig = {
       },
     },
     bscTest: {
-      url: 'https://data-seed-prebsc-1-s3.binance.org:8545',
+      url: BSC_TEST_RPC_URL,
       accounts: [
         '3765ae92eec18f50c24b230a3f0c7c75868f9c898985d1dec97845df1a54fd16',
       ],

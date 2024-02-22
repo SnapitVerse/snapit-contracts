@@ -7,7 +7,7 @@ contract SnapitNFT is ERC1155 {
     // Mapping to keep track of minted token IDs
     mapping(uint256 => bytes) public mintedTokens;
 
-    constructor() ERC1155('https://myapi.com/api/token/{id}.json') {}
+    constructor() ERC1155('http://localhost:3030/api/token/{id}.json') {}
 
     function mintUniqueToken(
         address account,
