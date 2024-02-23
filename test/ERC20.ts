@@ -21,7 +21,7 @@ describe('ERC20', function () {
       const readOwnerBalance = await erc20.balanceOf(owner)
       expect(readName).to.be.equal('SnapIt')
       expect(readSymbol).to.be.equal('SNPT')
-      expect(readOwnerBalance).to.be.equal(1_000_000_000)
+      expect(readOwnerBalance).to.be.equal(10n ** 27n)
     })
   })
 })
