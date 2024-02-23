@@ -1,5 +1,3 @@
-import { ethers } from 'hardhat'
-
 import { Bsc_Main, Bsc_Test } from '../contracts/Pancake/addresses.json'
 
 import { abi as FACTORY_ABI } from '@pancakeswap/v3-core/artifacts/contracts/PancakeV3Factory.sol/PancakeV3Factory.json'
@@ -11,6 +9,7 @@ import { ERC20__factory } from '../typechain-types'
 
 import SnapitNFT_ABI from '../artifacts/contracts/SnapitNFT.sol/SnapitNFT.json'
 import SnapitToken_ABI from '../artifacts/contracts/SnapitToken.sol/SnapitToken.json'
+import SnapitAuction_ABI from '../artifacts/contracts/Auction.sol/SnapitAuction.json'
 
 import WETH9_ABI from '../contracts/Pancake/weth9.json'
 
@@ -19,6 +18,8 @@ const {
   BSC_MAIN_WBNB_TOKEN_ADDRESS,
   BSC_MAIN_SNAPIT_TOKEN_ADDRESS,
   BSC_TEST_SNAPIT_TOKEN_ADDRESS,
+  BSC_TEST_SNAPIT_NFT_ADDRESS,
+  BSC_TEST_SNAPIT_AUCTION_ADDRESS,
   BSC_TEST_USDC_TOKEN_ADDRESS,
   BSC_TEST_WBNB_TOKEN_ADDRESS,
 } = process.env
@@ -105,7 +106,9 @@ export const getAddress = (network: Network): Addresses => {
         nonfungiblePositionManager: Bsc_Main.NonfungiblePositionManager,
         pancakeInterfaceMulticall: Bsc_Main.PancakeInterfaceMulticall,
         pancakeV3LmPoolDeployer: Bsc_Main.PancakeV3LmPoolDeployer,
-        snapitToken: BSC_MAIN_SNAPIT_TOKEN_ADDRESS as string,
+        snapitToken: '' as string,
+        snapitNFT: '' as string,
+        auction: '' as string,
         usdc: BSC_MAIN_USDC_TOKEN_ADDRESS as string,
         wbnb: BSC_MAIN_WBNB_TOKEN_ADDRESS as string,
       }
@@ -129,6 +132,8 @@ export const getAddress = (network: Network): Addresses => {
         pancakeInterfaceMulticall: Bsc_Test.PancakeInterfaceMulticall,
         pancakeV3LmPoolDeployer: Bsc_Test.PancakeV3LmPoolDeployer,
         snapitToken: BSC_TEST_SNAPIT_TOKEN_ADDRESS as string,
+        snapitNFT: BSC_TEST_SNAPIT_NFT_ADDRESS as string,
+        auction: BSC_TEST_SNAPIT_AUCTION_ADDRESS as string,
         usdc: BSC_TEST_USDC_TOKEN_ADDRESS as string,
         wbnb: BSC_TEST_WBNB_TOKEN_ADDRESS as string,
       }
@@ -145,6 +150,7 @@ export const getABI = (): ABIs => {
     pool: POOL_ABI,
     snapitToken: SnapitToken_ABI,
     snapitNFT: SnapitNFT_ABI,
+    auction: SnapitAuction_ABI,
     usdc: ERC20__factory.abi,
     wbnb: WETH9_ABI,
     erc20: ERC20__factory.abi,
@@ -169,6 +175,8 @@ type Addresses = {
   pancakeInterfaceMulticall: string
   pancakeV3LmPoolDeployer: string
   snapitToken: string
+  snapitNFT: string
+  auction: string
   usdc: string
   wbnb: string
 }
@@ -182,5 +190,6 @@ type ABIs = {
   usdc: any
   snapitToken: any
   snapitNFT: any
+  auction: any
   erc20: any
 }

@@ -6,11 +6,13 @@ import './ISnapitNft.sol';
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import '@openzeppelin/contracts/interfaces/IERC1155Receiver.sol';
+import '@openzeppelin/contracts/utils/introspection/ERC165.sol';
 
 /// @title StartonERC1155AuctionSale
 /// @author Starton
 /// @notice Sell ERC1155 tokens through an auction
-contract SnapitAuction is ReentrancyGuard {
+contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
     address private _feeReceiver;
 
     ISnapitNft public immutable snapitNft;
@@ -205,5 +207,46 @@ contract SnapitAuction is ReentrancyGuard {
 
         (bool success, ) = payable(msg.sender).call{value: amount}('');
         require(success, 'Failed to withdraw');
+    }
+
+    function onERC1155Received(
+        address /* _operator */,
+        address /* _from */,
+        uint256 /* _id */,
+        uint256 /* _value */,
+        bytes calldata /* _data */
+    ) external pure override returns (bytes4) {
+        // Implement your logic here, e.g., updating auction state, verifying the token, etc.
+
+        // Return this to indicate receipt was successful
+        return IERC1155Receiver.onERC1155Received.selector;
+    }
+
+    /**
+     * @dev See {IERC1155Receiver-onERC1155BatchReceived}.
+     * Always returns `IERC1155Receiver.onERC1155BatchReceived.selector` to accept the tokens.
+     */
+    function onERC1155BatchReceived(
+        address /* _operator */,
+        address /* _from */,
+        uint256[] calldata /* _ids */,
+        uint256[] calldata /* _values */,
+        bytes calldata /* _data */
+    ) external pure override returns (bytes4) {
+        // Implement your logic for batch transfer here, if necessary
+
+        // Return this to indicate receipt was successful
+        return IERC1155Receiver.onERC1155BatchReceived.selector;
+    }
+
+    /**
+     * @dev See {IERC165-supportsInterface}.
+     */
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override(ERC165, IERC165) returns (bool) {
+        return
+            interfaceId == type(IERC1155Receiver).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }
