@@ -5,14 +5,16 @@ import './ISnapitNft.sol';
 
 import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/access/Ownable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 /// @title StartonERC1155AuctionSale
 /// @author Starton
 /// @notice Sell ERC1155 tokens through an auction
-contract SnapitAuction is Ownable, ReentrancyGuard {
+contract SnapitAuction is ReentrancyGuard {
     address private _feeReceiver;
 
-    ISnapitNft public immutable token;
+    ISnapitNft public immutable snapitNft;
+    IERC20 public immutable snapitToken;
 
     struct Bid {
         address bidder;
@@ -21,31 +23,33 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
     }
 
     struct Auction {
+        address auctionOwner;
         uint256 currentPrice;
         uint256 minPriceDifference;
         uint256 startTime;
         uint256 endTime;
         uint256 latestBid;
+        uint256 buyoutPrice;
         bool claimed;
         mapping(uint256 => Bid) bids;
     }
 
-    function currentBid(uint256 tokenId) internal returns (Bid memory biddi) {
-        uint256 latestBid = auctions[tokenId].latestBid;
-        return auctions[tokenId].bids[latestBid];
+    // key is tokenId
+    mapping(uint256 => Auction) public auctions;
+
+    function currentBid(uint256 tokenId) internal view returns (Bid memory) {
+        Auction storage auction = auctions[tokenId];
+        uint256 latestBid = auction.latestBid;
+        return auction.bids[latestBid];
     }
 
     function addBid(uint256 tokenId, address bidder, uint256 price) internal {
-        auctions[tokenId].bids[auctions[tokenId].latestBid + 1].bidder = bidder;
-        auctions[tokenId].bids[auctions[tokenId].latestBid + 1].price = price;
-        auctions[tokenId]
-            .bids[auctions[tokenId].latestBid + 1]
-            .withdrawn = false;
-        auctions[tokenId].latestBid = auctions[tokenId].latestBid + 1;
+        Auction storage auction = auctions[tokenId];
+        auction.bids[auction.latestBid + 1].bidder = bidder;
+        auction.bids[auction.latestBid + 1].price = price;
+        auction.bids[auction.latestBid + 1].withdrawn = false;
+        auction.latestBid = auction.latestBid + 1;
     }
-
-    // key is tokenId
-    mapping(uint256 => Auction) public auctions;
 
     /** @notice Event emitted when an auction started */
     event AuctionStarted(uint256 tokenId, uint256 startTime, uint256 endTime);
@@ -60,25 +64,24 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
     /** @notice Event emitted when an account bided on an auction */
     event Bided(uint256 tokenId, address indexed bidder, uint256 price);
 
-    constructor(address tokenAddress) Ownable(msg.sender) {
-        token = ISnapitNft(tokenAddress);
+    constructor(address tokenAddress, address nftAddress) {
+        require(
+            tokenAddress != nftAddress,
+            'tokenAddress and nftAddress cannot be same.'
+        );
+        snapitToken = IERC20(tokenAddress);
+        snapitNft = ISnapitNft(nftAddress);
     }
 
     /**
      * @notice Bid for the current auction
      */
-    function bid(uint256 tokenId) public payable nonReentrant {
+    function bid(uint256 tokenId, uint256 price) public nonReentrant {
+        Auction storage auction = auctions[tokenId];
+        require(auction.startTime <= block.timestamp, 'Bidding not started');
+        require(auction.endTime >= block.timestamp, 'Bidding finished');
         require(
-            auctions[tokenId].startTime <= block.timestamp,
-            'Bidding not started'
-        );
-        require(
-            auctions[tokenId].endTime >= block.timestamp,
-            'Bidding finished'
-        );
-        require(
-            currentBid(tokenId).price + auctions[tokenId].minPriceDifference <=
-                msg.value,
+            currentBid(tokenId).price + auction.minPriceDifference <= price,
             'Bid is too low'
         );
 
@@ -86,15 +89,24 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
         address oldAuctionWinner = currentBid(tokenId).bidder;
         uint256 oldPrice = currentBid(tokenId).price;
 
-        addBid(tokenId, _msgSender(), msg.value);
+        if (price >= auction.buyoutPrice) {
+            addBid(tokenId, msg.sender, auction.buyoutPrice);
+            snapitToken.transferFrom(
+                msg.sender,
+                address(this),
+                auction.buyoutPrice
+            );
+            auction.endTime = block.timestamp;
+        } else {
+            addBid(tokenId, msg.sender, price);
+            snapitToken.transferFrom(msg.sender, address(this), price);
+        }
 
-        emit Bided(tokenId, _msgSender(), msg.value);
+        emit Bided(tokenId, msg.sender, price);
 
         // If there is a current winner, send back the money or add the money to claimable amount
         if (oldAuctionWinner != address(0)) {
-            (bool success, ) = payable(oldAuctionWinner).call{value: oldPrice}(
-                ''
-            );
+            snapitToken.transferFrom(address(this), oldAuctionWinner, oldPrice);
         }
     }
 
@@ -102,19 +114,25 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
      * @notice Claim the prize of the current auction
      */
     function claim(uint256 tokenId) public {
+        Auction storage auction = auctions[tokenId];
         require(
-            auctions[tokenId].endTime < block.timestamp,
-            "Minting hasn't finished yet"
+            auction.endTime < block.timestamp,
+            "Auction hasn't finished yet"
         );
-        require(!auctions[tokenId].claimed, 'Token has already been claimed');
+        require(!auction.claimed, 'Token has already been claimed');
 
-        auctions[tokenId].claimed = true;
+        auction.claimed = true;
         emit AuctionClaimed(
             tokenId,
             currentBid(tokenId).bidder,
             currentBid(tokenId).price
         );
-        token.safeTransferFrom(
+        snapitToken.transferFrom(
+            address(this),
+            auction.auctionOwner,
+            currentBid(tokenId).price
+        );
+        snapitNft.safeTransferFrom(
             address(this),
             currentBid(tokenId).bidder,
             tokenId,
@@ -129,32 +147,43 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
      * @param newStartingPrice the starting price of the new auction
      * @param newStartTime the time when the auction starts
      * @param newEndTime the time when the auction ends
-     * @param newTokenAmount the amount of the token to be sold
      */
-    function startNewAuction(
+    function createAuction(
         uint256 tokenId,
         uint256 newStartingPrice,
         uint256 newMinPriceDifference,
+        uint256 newBuyoutPrice,
         uint256 newStartTime,
-        uint256 newEndTime,
-        uint256 newTokenAmount
-    ) public onlyOwner {
-        require(
-            auctions[tokenId].claimed,
-            "The auction hasn't been claimed yet"
-        );
+        uint256 newEndTime
+    ) public {
+        Auction storage auction = auctions[tokenId];
+        if (auction.auctionOwner != address(0)) {
+            require(auction.claimed, "The auction hasn't been claimed yet");
+        }
         require(
             newStartTime < newEndTime,
             'Start time must be before end time'
         );
+        require(
+            snapitNft.balanceOf(msg.sender, tokenId) == 1,
+            'Sender must own the token'
+        );
+        require(
+            newBuyoutPrice == 0 || newStartingPrice < newBuyoutPrice,
+            'Starting price cannot be more than buyout price'
+        );
 
         // Reset the state variables for a new auction to begin
-        auctions[tokenId].claimed = false;
-        auctions[tokenId].minPriceDifference = newMinPriceDifference;
-        auctions[tokenId].latestBid = 0;
+        auction.auctionOwner = msg.sender;
+        auction.claimed = false;
+        auction.minPriceDifference = newMinPriceDifference;
+        auction.latestBid = 0;
         addBid(tokenId, address(0), newStartingPrice);
-        auctions[tokenId].startTime = newStartTime;
-        auctions[tokenId].endTime = newEndTime;
+        auction.buyoutPrice = newBuyoutPrice;
+        auction.startTime = newStartTime;
+        auction.endTime = newEndTime;
+
+        snapitNft.safeTransferFrom(msg.sender, address(this), tokenId, 1, '0x');
 
         emit AuctionStarted(tokenId, newStartTime, newEndTime);
     }
@@ -166,7 +195,7 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
         uint256 amount = 0;
 
         for (uint i = 1; i < auctions[token_id].latestBid; i++) {
-            if (auctions[token_id].bids[i].bidder == _msgSender()) {
+            if (auctions[token_id].bids[i].bidder == msg.sender) {
                 if (auctions[token_id].bids[i].withdrawn == false) {
                     amount = amount + auctions[token_id].bids[i].price;
                     auctions[token_id].bids[i].withdrawn = true;
@@ -174,7 +203,7 @@ contract SnapitAuction is Ownable, ReentrancyGuard {
             }
         }
 
-        (bool success, ) = payable(_msgSender()).call{value: amount}('');
+        (bool success, ) = payable(msg.sender).call{value: amount}('');
         require(success, 'Failed to withdraw');
     }
 }
