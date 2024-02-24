@@ -18,11 +18,17 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
     ISnapitNft public immutable snapitNft;
     IERC20 public immutable snapitToken;
 
-    // struct Bid {
-    //     address bidder;
-    //     uint256 price;
-    //     bool withdrawn;
-    // }
+    error AuctionHasNotFinished();
+    error TokenAlreadyClaimed();
+    error AuctionHasNotBeenClaimed();
+    error StartTimeMustBeBeforeEndTime();
+    error SenderMustOwnNFT();
+    error StartPriceMustBeLessThanBuyoutPrice();
+    error TokenAndNFTAddressCanNotBeSame();
+    error BiddingHasNotStarted();
+    error BiddingHasFinished();
+    error BidPriceTooLow();
+    error StartPricePlusPriceDifferenceCanNotBeMoreThanBuyoutPrice();
 
     struct Auction {
         address auctionOwner;
@@ -33,7 +39,6 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
         address bidOwner;
         uint256 bidPrice;
         bool claimed;
-        // mapping(uint256 => Bid) bids;
     }
 
     // key is tokenId
@@ -53,10 +58,7 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
     event Bid(uint256 tokenId, address indexed bidder, uint256 price);
 
     constructor(address tokenAddress, address nftAddress) {
-        require(
-            tokenAddress != nftAddress,
-            'tokenAddress and nftAddress cannot be same.'
-        );
+        if (tokenAddress == nftAddress) revert TokenAndNFTAddressCanNotBeSame();
         snapitToken = IERC20(tokenAddress);
         snapitNft = ISnapitNft(nftAddress);
     }
@@ -66,17 +68,16 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
      */
     function bid(uint256 tokenId, uint256 price) public nonReentrant {
         Auction storage auction = auctions[tokenId];
-        require(auction.startTime <= block.timestamp, 'Bidding not started');
-        require(auction.endTime >= block.timestamp, 'Bidding finished');
-        require(
-            auction.bidPrice + auction.minPriceDifference <= price,
-            'Bid is too low'
-        );
+        if (auction.startTime > block.timestamp) revert BiddingHasNotStarted();
+        if (auction.endTime < block.timestamp) revert BiddingHasFinished();
+        if (auction.bidPrice + auction.minPriceDifference > price)
+            revert BidPriceTooLow();
 
         uint256 bidPrice = price;
 
-        if (price >= auction.buyoutPrice) {
+        if (auction.buyoutPrice != 0 && price >= auction.buyoutPrice) {
             bidPrice = auction.buyoutPrice;
+            auction.endTime = block.timestamp;
         }
 
         // Store the old auction winner and price
@@ -86,13 +87,13 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
         auction.bidOwner = msg.sender;
         auction.bidPrice = bidPrice;
 
-        snapitToken.transferFrom(msg.sender, address(this), auction.bidPrice);
+        snapitToken.transferFrom(msg.sender, address(this), bidPrice);
 
         emit Bid(tokenId, msg.sender, bidPrice);
 
         // If there is a current winner, send back the money or add the money to claimable amount
         if (oldAuctionWinner != address(0)) {
-            snapitToken.transferFrom(address(this), oldAuctionWinner, oldPrice);
+            snapitToken.transfer(oldAuctionWinner, oldPrice);
         }
     }
 
@@ -101,19 +102,13 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
      */
     function claim(uint256 tokenId) public {
         Auction storage auction = auctions[tokenId];
-        require(
-            auction.endTime < block.timestamp,
-            "Auction hasn't finished yet"
-        );
-        require(!auction.claimed, 'Token has already been claimed');
+
+        if (auction.endTime >= block.timestamp) revert AuctionHasNotFinished();
+        if (auction.claimed) revert TokenAlreadyClaimed();
 
         auction.claimed = true;
 
-        snapitToken.transferFrom(
-            address(this),
-            auction.auctionOwner,
-            auction.bidPrice
-        );
+        snapitToken.transfer(auction.auctionOwner, auction.bidPrice);
         snapitNft.safeTransferFrom(
             address(this),
             auction.bidOwner,
@@ -141,29 +136,23 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
         uint256 newEndTime
     ) public {
         Auction storage auction = auctions[tokenId];
-        if (auction.auctionOwner != address(0)) {
-            require(auction.claimed, "The auction hasn't been claimed yet");
-        }
-        require(
-            newStartTime < newEndTime,
-            'Start time must be before end time'
-        );
-        require(
-            snapitNft.balanceOf(msg.sender, tokenId) == 1,
-            'Sender must own the token'
-        );
-        require(
-            newBuyoutPrice == 0 || newStartingPrice < newBuyoutPrice,
-            'Starting price cannot be more than buyout price'
-        );
+
+        if (auction.auctionOwner != address(0) && !auction.claimed)
+            revert AuctionHasNotBeenClaimed();
+        if (newStartTime >= newEndTime) revert StartTimeMustBeBeforeEndTime();
+        if (snapitNft.balanceOf(msg.sender, tokenId) != 1)
+            revert SenderMustOwnNFT();
+        if (
+            newBuyoutPrice != 0 &&
+            newStartingPrice + newMinPriceDifference > newBuyoutPrice
+        ) revert StartPricePlusPriceDifferenceCanNotBeMoreThanBuyoutPrice();
 
         // Reset the state variables for a new auction to begin
         auction.auctionOwner = msg.sender;
         auction.claimed = false;
         auction.minPriceDifference = newMinPriceDifference;
-        auction.bidOwner = msg.sender;
-        auction.bidPrice = newStartingPrice;
         auction.buyoutPrice = newBuyoutPrice;
+        auction.bidPrice = newStartingPrice;
         auction.startTime = newStartTime;
         auction.endTime = newEndTime;
 
