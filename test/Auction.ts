@@ -6,6 +6,16 @@ import { expect } from 'chai'
 import { ethers, network } from 'hardhat'
 
 describe('Auction', function () {
+  let snapshotId: any
+  this.beforeAll(async function () {
+    // Take a snapshot before each test
+    snapshotId = await ethers.provider.send('evm_snapshot', [])
+  })
+
+  this.afterAll(async function () {
+    // Revert to the snapshot after each test, resetting the EVM
+    await ethers.provider.send('evm_revert', [snapshotId])
+  })
   async function deployAuction() {
     // Contracts are deployed using the first signer/account by default
     const [owner, otherAccount, otherAccount2] = await ethers.getSigners()
