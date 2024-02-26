@@ -41,6 +41,16 @@ const config: HardhatUserConfig = {
       url: BSC_TEST_RPC_URL,
       accounts: [
         '3765ae92eec18f50c24b230a3f0c7c75868f9c898985d1dec97845df1a54fd16',
+        'd3d3901dc47581b61dc9c5b0716662bc6f1369cefa1a714c939fd8ae467a250c',
+        '0bc7f2cacab97cb227658d88280e0118926c20a0ca27461e97cb39a028833425',
+      ],
+    },
+    bscMain: {
+      url: BSC_MAIN_RPC_URL,
+      accounts: [
+        '3765ae92eec18f50c24b230a3f0c7c75868f9c898985d1dec97845df1a54fd16',
+        'd3d3901dc47581b61dc9c5b0716662bc6f1369cefa1a714c939fd8ae467a250c',
+        '0bc7f2cacab97cb227658d88280e0118926c20a0ca27461e97cb39a028833425',
       ],
     },
   },

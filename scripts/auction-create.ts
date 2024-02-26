@@ -13,10 +13,10 @@ async function main() {
   const startTime = Math.floor(Date.now() / 1000)
 
   const createAuctionParams = {
-    tokenId: 98,
+    tokenId: 97,
     newStartingPrice: 100000,
     newMinPriceDifference: 10000,
-    newBuyoutPrice: 10000000,
+    newBuyoutPrice: 1000000,
     newStartTime: startTime,
     newEndTime: startTime + 3600,
   }

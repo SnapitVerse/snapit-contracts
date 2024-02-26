@@ -108,16 +108,24 @@ contract SnapitAuction is IERC1155Receiver, ERC165, ReentrancyGuard {
 
         auction.claimed = true;
 
-        snapitToken.transfer(auction.auctionOwner, auction.bidPrice);
+        address nftRecepient;
+
+        if (auction.bidOwner != address(0)) {
+            snapitToken.transfer(auction.auctionOwner, auction.bidPrice);
+            nftRecepient = auction.bidOwner;
+        } else {
+            nftRecepient = auction.auctionOwner;
+        }
+
         snapitNft.safeTransferFrom(
             address(this),
-            auction.bidOwner,
+            nftRecepient,
             tokenId,
             1,
             '0x'
         );
 
-        emit AuctionClaimed(tokenId, auction.bidOwner, auction.bidPrice);
+        emit AuctionClaimed(tokenId, nftRecepient, auction.bidPrice);
     }
 
     /**
