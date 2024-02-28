@@ -65,7 +65,7 @@ describe('Auction', function () {
       otherAccount2InitialBalance: bigint
 
     this.beforeAll(async () => {
-      ;({
+      ; ({
         snapitToken,
         snapitNft,
         snapitNftAddress,
@@ -104,6 +104,29 @@ describe('Auction', function () {
           createAuctionParams1.newStartTime,
           createAuctionParams1.newEndTime
         )
+    })
+
+    it("Should fail to create auction by non-owner", async function () {
+      const { snapitNft, auction, owner, otherAccount } = await deployAuction();
+
+      const tokenId = 1;
+      const startingPrice = ethers.parseUnits("1", "ether");
+      const minPriceDifference = ethers.parseUnits("0.1", "ether");
+      const buyoutPrice = ethers.parseUnits("10", "ether");
+      const startTime = Math.floor(Date.now() / 1000) + 60; // 1 minute from now
+      const endTime = startTime + 3600; // 1 hour after start time
+
+      // Attempt to create an auction with an account that does not own the NFT
+      await expect(
+        auction.connect(otherAccount).createAuction(
+          tokenId,
+          startingPrice,
+          minPriceDifference,
+          buyoutPrice,
+          startTime,
+          endTime
+        )
+      ).to.be.revertedWithCustomError(auction, "SenderMustOwnNFT")
     })
 
     it('Should allow bidding in an auction and handle refunds correctly', async function () {
@@ -176,7 +199,13 @@ describe('Auction', function () {
       const response = await auction.claim(createAuctionParams1.tokenId)
     })
 
-    it('Claim should transfer NFT and price to respective owners', async function () {
+    it('Should revert claim if token has already been claimed', async function () {
+      const response1 = await expect(
+        auction.claim(createAuctionParams1.tokenId)
+      ).to.be.revertedWithCustomError(auction, 'TokenAlreadyClaimed')
+    })
+
+    it('Should transfer claimed NFT and bidded tokens to respective owners', async function () {
       const otherAccount2Balance = await snapitNft.balanceOf(
         otherAccount2.address,
         createAuctionParams1.tokenId
@@ -193,5 +222,53 @@ describe('Auction', function () {
 
       expect(BigInt(ownerBalance)).to.be.equal(BigInt(ownerNewBalance))
     })
+
+    it("Should fail to create auction with invalid buyout price", async function () {
+      const { snapitNft, auction, owner } = await deployAuction();
+
+      const tokenId = 1;
+      const startingPrice = ethers.parseUnits("1", "ether");
+      const minPriceDifference = ethers.parseUnits("0.1", "ether");
+      // Set buyout price lower than starting price + minPriceDifference
+      const invalidBuyoutPrice = ethers.parseUnits("1.05", "ether");
+      const startTime = Math.floor(Date.now() / 1000) + 60; // 1 minute from now
+      const endTime = startTime + 3600; // 1 hour after start time
+
+      // Attempt to create an auction with a buyout price lower than the sum of starting price and minimum price difference
+      await expect(
+        auction.connect(owner).createAuction(
+          tokenId,
+          startingPrice,
+          minPriceDifference,
+          invalidBuyoutPrice,
+          startTime,
+          endTime
+        )
+      ).to.be.revertedWithCustomError(auction, "StartPricePlusPriceDifferenceCanNotBeMoreThanBuyoutPrice");
+    });
+
+    it("Should fail to create auction with start time not before end time", async function () {
+      const { snapitNft, auction, owner } = await deployAuction();
+
+      const tokenId = 1;
+      const startingPrice = ethers.parseUnits("1", "ether");
+      const minPriceDifference = ethers.parseUnits("0.1", "ether");
+      const buyoutPrice = ethers.parseUnits("10", "ether");
+      // Set start time and end time to be the same, violating the start-before-end requirement
+      const startTime = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
+      const endTime = startTime; // End time is the same as start time
+
+      // Attempt to create an auction with invalid timing
+      await expect(
+        auction.connect(owner).createAuction(
+          tokenId,
+          startingPrice,
+          minPriceDifference,
+          buyoutPrice,
+          startTime,
+          endTime
+        )
+      ).to.be.revertedWithCustomError(auction, "StartTimeMustBeBeforeEndTime");
+    });
   })
 })
