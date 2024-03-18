@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.4",
     "@openzeppelin/contracts": "^5.0.1",
     "@pancakeswap/pancake-swap-lib": "0.0.4",
     "@pancakeswap/v3-core": "^1.0.2",

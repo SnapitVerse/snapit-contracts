@@ -4,7 +4,7 @@ async function main() {
   const [owner] = await ethers.getSigners()
 
   // bscTest snapitToken contract address: 0x8d809eC21EDDdc73ed8629A4E9B3E73169A20e36
-  const ERC20 = await ethers.getContractFactory('SnapitToken')
+  const ERC20 = await ethers.getContractFactory('DemoToken')
   const erc20 = await ERC20.deploy()
   await erc20.waitForDeployment()
 

@@ -1,6 +1,6 @@
 import { ethers } from 'hardhat'
 import * as crypto from 'crypto'
-import { SnapitNFT } from '../typechain-types'
+import { SnapitNFT1155 } from '../../typechain-types'
 
 function generateMetadataHash(metadata: object): string {
   // Convert the metadata object to a JSON string
@@ -19,10 +19,10 @@ async function main() {
 
   // localhost contract address: 0x5fbdb2315678afecb367f032d93f642f64180aa3
 
-  const ERC1155 = await ethers.getContractFactory('SnapitNFT')
+  const ERC1155 = await ethers.getContractFactory('SnapitNFT1155')
   const erc1155 = ERC1155.attach(
     '0x5fbdb2315678afecb367f032d93f642f64180aa3'
-  ) as SnapitNFT
+  ) as SnapitNFT1155
 
   const tokenId = 25
   const metadata = {

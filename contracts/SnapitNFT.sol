@@ -1,34 +1,61 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import '@openzeppelin/contracts/token/ERC1155/ERC1155.sol';
+import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Royalty.sol';
+import '@openzeppelin/contracts/utils/Strings.sol';
+import '@openzeppelin/contracts/access/Ownable.sol';
 
-contract SnapitNFT is ERC1155 {
-    // Mapping to keep track of minted token IDs
-    mapping(uint256 => bytes) public mintedTokens;
+contract SnapitNFT is ERC721Royalty, Ownable {
+    constructor() ERC721('SnapitNFT', 'SNPTNFT') Ownable(msg.sender) {}
 
-    constructor() ERC1155('https://myapi.com/api/token/{id}.json') {}
-
-    function mintUniqueToken(
+    function mint(address account, uint256 id) public onlyOwner {
+        _safeMint(account, id, '');
+    }
+    function mint(
         address account,
         uint256 id,
         bytes memory data
-    ) public {
-        require((mintedTokens[id].length == 0), 'Token already minted');
-        mintedTokens[id] = data;
-        _mint(account, id, 1, data);
+    ) public onlyOwner {
+        _safeMint(account, id, data);
     }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) public override {
-        require(amount == 1, 'Can only transfer 1 token at a time');
-        super.safeTransferFrom(from, to, id, amount, data);
+    function contractURI() public pure returns (string memory) {
+        return 'https://test-api.snapit.world/api/token/contract-metadata.json';
     }
 
-    // getTokenMetadata
+    function baseTokenURI() public pure virtual returns (string memory) {
+        return 'https://test-api.snapit.world/api/token/';
+    }
+
+    function tokenURI(
+        uint256 _tokenId
+    ) public pure override returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    baseTokenURI(),
+                    Strings.toString(_tokenId),
+                    '.json'
+                )
+            );
+    }
+
+    function setDefaultRoyalty(
+        address receiver,
+        uint96 feeNumerator
+    ) public onlyOwner {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    function deleteDefaultRoyalty() public onlyOwner {
+        _deleteDefaultRoyalty();
+    }
+
+    function setTokenRoyalty(
+        uint256 tokenId,
+        address receiver,
+        uint96 feeNumerator
+    ) public onlyOwner {
+        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    }
 }
