@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { Network, getAddress } from './constants'
+import { Network, getAddress } from '../constants'
 
 async function main() {
   const [owner, otherAccount] = await ethers.getSigners()

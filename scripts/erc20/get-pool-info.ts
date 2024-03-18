@@ -1,8 +1,8 @@
 import { ethers } from 'hardhat'
-import { Network } from './constants'
+import { Network } from '../constants'
 
 import dotenv from 'dotenv'
-import { poolGetInfo } from './operations/poolGetInfo'
+import { poolGetInfo } from '../operations/poolGetInfo'
 
 dotenv.config({ path: 'scripts/.temp.env' })
 

@@ -1,5 +1,6 @@
 import { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
+import '@nomicfoundation/hardhat-verify'
 import dotenv from 'dotenv'
 
 dotenv.config()
@@ -17,9 +18,9 @@ const config: HardhatUserConfig = {
       },
     },
     sepolia: {
-      url: 'https://sepolia.infura.io/v3/614ac29753474b5ca285315d4ea69919',
+      url: 'https://eth-sepolia.g.alchemy.com/v2/dvVBC03lxDbreeq8lrRbKgqLT6xoTZiy',
       accounts: [
-        'd3d3901dc47581b61dc9c5b0716662bc6f1369cefa1a714c939fd8ae467a250c',
+        '3765ae92eec18f50c24b230a3f0c7c75868f9c898985d1dec97845df1a54fd16',
       ],
     },
     local: {
@@ -56,8 +57,11 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     //BscScan
-    apiKey: 'QXARK1W8HFXQKFDE7VU1WBQM7ZSBS9BK5A',
+    apiKey: 'DIDPXSQEVZ3C7M43BCKY51TJJTGZA9A3ZE',
   },
+  // sourcify: {
+  //   enabled: true,
+  // },
   solidity: {
     compilers: [
       {

@@ -1,12 +1,12 @@
 import { ethers } from 'hardhat'
-import { SnapitNFT } from '../typechain-types'
+import { SnapitNFT } from '../../typechain-types'
 
 async function main() {
   const [owner, otherAccount] = await ethers.getSigners()
 
   // localhost contract address: 0x5fbdb2315678afecb367f032d93f642f64180aa3
 
-  const ERC1155 = await ethers.getContractFactory('SnapitNFT')
+  const ERC1155 = await ethers.getContractFactory('SnapitNFT1155')
   const erc1155 = ERC1155.attach(
     '0x5fbdb2315678afecb367f032d93f642f64180aa3'
   ) as SnapitNFT

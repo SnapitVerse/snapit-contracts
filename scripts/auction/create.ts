@@ -1,5 +1,5 @@
 import { ethers } from 'hardhat'
-import { Network, getABI, getAddress } from './constants'
+import { Network, getABI, getAddress } from '../constants'
 
 async function main() {
   const [owner, otherAccount] = await ethers.getSigners()
@@ -12,8 +12,10 @@ async function main() {
 
   const startTime = Math.floor(Date.now() / 1000)
 
+  const tokenId = 5
+
   const createAuctionParams = {
-    tokenId: 97,
+    tokenId,
     newStartingPrice: 100000,
     newMinPriceDifference: 10000,
     newBuyoutPrice: 1000000,
